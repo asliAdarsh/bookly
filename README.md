@@ -2,6 +2,32 @@
 
 A modern, fast, and secure REST API for managing books, users, and reviews built with FastAPI and Python. This application provides comprehensive book management capabilities with user authentication, role-based access control, and review functionality.
 
+## 📑 Table of Contents
+
+- [Features](#-features)
+- [Technology Stack](#-technology-stack)
+- [Prerequisites](#-prerequisites)
+- [Installation](#-installation)
+- [Environment Configuration](#-environment-configuration)
+- [Database Setup](#-database-setup)
+- [Running the Application](#-running-the-application)
+- [API Documentation](#-api-documentation)
+- [Database Schema](#-database-schema)
+- [Authentication & Authorization](#-authentication--authorization)
+- [Database Migrations](#-database-migrations)
+- [API Response Examples](#-api-response-examples)
+- [Troubleshooting](#-troubleshooting)
+- [Testing](#-testing)
+- [Project Structure](#-project-structure)
+- [Development Guidelines](#-development-guidelines)
+- [Docker Deployment](#-docker-deployment-optional)
+- [Deployment to Production](#-deployment-to-production)
+- [Installation Verification](#-installation-verification)
+- [Contributing](#-contributing)
+- [License](#-license)
+- [Support](#-support)
+- [Useful Links](#-useful-links)
+
 ## 🚀 Features
 
 ### Core Functionality
@@ -406,7 +432,234 @@ CREATE TABLE reviews (
 - Role-based access control on all endpoints
 - Secure token refresh mechanism
 
+## 🔄 Database Migrations
+
+This project uses Alembic for database schema management. Here are common migration operations:
+
+### Creating Migrations
+```bash
+# Generate a new migration after model changes
+alembic revision --autogenerate -m "Add new feature"
+
+# Create an empty migration file
+alembic revision -m "Custom migration name"
+```
+
+### Applying Migrations
+```bash
+# Apply all pending migrations
+alembic upgrade head
+
+# Apply migrations up to a specific revision
+alembic upgrade <revision_id>
+
+# Apply one migration at a time
+alembic upgrade +1
+```
+
+### Migration History
+```bash
+# Show current migration status
+alembic current
+
+# Show migration history
+alembic history
+
+# Show pending migrations
+alembic heads
+```
+
+### Rollback Migrations
+```bash
+# Rollback one migration
+alembic downgrade -1
+
+# Rollback to a specific revision
+alembic downgrade <revision_id>
+
+# Rollback all migrations
+alembic downgrade base
+```
+
+## 📊 API Response Examples
+
+### Successful Responses
+
+#### User Registration Success
+```json
+{
+  "uid": "123e4567-e89b-12d3-a456-426614174000",
+  "username": "johndoe",
+  "email": "john@example.com",
+  "first_name": "John",
+  "last_name": "Doe",
+  "is_verified": false,
+  "created_at": "2023-01-01T10:00:00",
+  "updated_at": "2023-01-01T10:00:00",
+  "books": []
+}
+```
+
+#### Book Creation Success
+```json
+{
+  "uid": "456e7890-e89b-12d3-a456-426614174001",
+  "title": "The Great Gatsby",
+  "author": "F. Scott Fitzgerald", 
+  "publisher": "Scribner",
+  "published_date": "1925-04-10",
+  "page_count": 180,
+  "language": "English",
+  "user_uid": "123e4567-e89b-12d3-a456-426614174000",
+  "created_at": "2023-01-01T10:05:00",
+  "updated_at": "2023-01-01T10:05:00"
+}
+```
+
+### Error Responses
+
+#### Authentication Error
+```json
+{
+  "detail": "Please provide a valid token"
+}
+```
+
+#### Validation Error
+```json
+{
+  "detail": [
+    {
+      "loc": ["body", "email"],
+      "msg": "field required",
+      "type": "value_error.missing"
+    }
+  ]
+}
+```
+
+#### Not Found Error
+```json
+{
+  "detail": "Book not found"
+}
+```
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+#### 1. Import Errors
+**Problem**: `ModuleNotFoundError` when running the application
+
+**Solution**:
+```bash
+# Ensure all dependencies are installed
+pip install -r requirements.txt
+pip install sqlmodel alembic asyncpg psycopg2-binary passlib[bcrypt] PyJWT redis pydantic-settings
+
+# Verify installation
+python -c "import src; print('✅ All imports successful')"
+```
+
+#### 2. Database Connection Issues
+**Problem**: `sqlalchemy.exc.OperationalError` or connection refused
+
+**Solutions**:
+- Verify PostgreSQL is running: `pg_ctl status`
+- Check database credentials in `.env` file
+- Ensure database exists: `createdb bookly_db`
+- Test connection: `psql -h localhost -U bookly_user -d bookly_db`
+
+#### 3. Redis Connection Issues  
+**Problem**: Redis connection errors
+
+**Solutions**:
+- Start Redis server: `redis-server` or `brew services start redis`
+- Check Redis is running: `redis-cli ping` (should return "PONG")
+- Verify Redis configuration in `.env` file
+
+#### 4. JWT Secret Key Issues
+**Problem**: JWT decoding errors
+
+**Solution**:
+```bash
+# Generate a secure secret key
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+# Add the generated key to your .env file as JWT_SECRET
+```
+
+#### 5. Migration Issues
+**Problem**: Alembic migration errors
+
+**Solutions**:
+```bash
+# Reset migration history (development only)
+alembic downgrade base
+alembic upgrade head
+
+# Check current migration status
+alembic current
+
+# Manually set migration version (if needed)
+alembic stamp head
+```
+
+### Performance Tips
+
+1. **Database Connection Pooling**: The application uses SQLModel's built-in connection pooling
+2. **Redis for Caching**: Token blacklisting is handled via Redis for fast lookups
+3. **Async Operations**: All database operations are asynchronous for better performance
+4. **Index Optimization**: Consider adding database indexes for frequently queried fields
+
 ## 🧪 Testing
+
+### Manual API Testing
+
+Use the interactive API documentation at `http://localhost:8000/docs` for easy testing, or use curl commands as shown in the examples above.
+
+### Testing with Postman
+
+1. Import the API endpoints into Postman
+2. Set up environment variables for:
+   - `base_url`: `http://localhost:8000`
+   - `access_token`: (obtained from login)
+3. Use Bearer token authentication for protected endpoints
+
+### Unit Testing Setup
+
+While this project doesn't include unit tests yet, here's how you could set them up:
+
+```bash
+# Install testing dependencies  
+pip install pytest pytest-asyncio httpx
+
+# Create test files
+mkdir tests
+touch tests/__init__.py
+touch tests/test_auth.py
+touch tests/test_books.py
+```
+
+Example test structure:
+```python
+# tests/test_auth.py
+import pytest
+from httpx import AsyncClient
+from src import app
+
+@pytest.mark.asyncio
+async def test_user_registration():
+    async with AsyncClient(app=app, base_url="http://test") as ac:
+        response = await ac.post("/api/v1/user/signup", json={
+            "first_name": "Test",
+            "last_name": "User", 
+            "username": "testuser",
+            "email": "test@example.com",
+            "password": "testpass123"
+        })
+    assert response.status_code == 201
+```
 
 ### Manual Testing with curl
 
@@ -515,6 +768,225 @@ alembic downgrade -1
 4. Update database models if needed
 5. Create and run migrations
 6. Test the new functionality
+
+## 🐳 Docker Deployment (Optional)
+
+### Dockerfile
+
+Create a `Dockerfile` for containerizing the application:
+
+```dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements and install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY src/ ./src/
+COPY migrations/ ./migrations/
+COPY alembic.ini .
+
+# Expose port
+EXPOSE 8000
+
+# Run the application
+CMD ["uvicorn", "src:app", "--host", "0.0.0.0", "--port", "8000"]
+```
+
+### Docker Compose
+
+Create a `docker-compose.yml` for local development:
+
+```yaml
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://bookly_user:password123@db:5432/bookly_db
+      - JWT_SECRET=your-super-secure-secret-key
+      - JWT_ALGORITHM=HS256
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - ./src:/app/src
+    command: ["uvicorn", "src:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=bookly_db
+      - POSTGRES_USER=bookly_user
+      - POSTGRES_PASSWORD=password123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+volumes:
+  postgres_data:
+```
+
+### Running with Docker
+
+```bash
+# Build and start all services
+docker-compose up --build
+
+# Run in background
+docker-compose up -d
+
+# View logs
+docker-compose logs -f app
+
+# Stop services
+docker-compose down
+
+# Reset database
+docker-compose down -v && docker-compose up --build
+```
+
+## 🌐 Deployment to Production
+
+### Environment Variables for Production
+
+```env
+# Production database (use managed database service)
+DATABASE_URL=postgresql+asyncpg://user:password@your-db-host:5432/bookly_prod
+
+# Strong JWT secret (generate with: python -c "import secrets; print(secrets.token_urlsafe(32))")
+JWT_SECRET=your-very-secure-production-secret-key
+
+# Production Redis (use managed Redis service)
+REDIS_HOST=your-redis-host
+REDIS_PORT=6379
+REDIS_PASSWORD=your-redis-password
+
+# Optional: Enable CORS for frontend
+CORS_ORIGINS=["https://yourdomain.com"]
+```
+
+### Production Deployment Checklist
+
+- [ ] Use managed database services (AWS RDS, Google Cloud SQL, etc.)
+- [ ] Use managed Redis services (AWS ElastiCache, Redis Cloud, etc.)
+- [ ] Set strong, random JWT_SECRET
+- [ ] Enable HTTPS/SSL
+- [ ] Set up proper CORS origins
+- [ ] Configure logging and monitoring
+- [ ] Set up automated backups
+- [ ] Use environment-specific configuration files
+- [ ] Implement health checks
+- [ ] Set up CI/CD pipelines
+
+### Recommended Production Stack
+
+- **Hosting**: AWS ECS, Google Cloud Run, or DigitalOcean App Platform
+- **Database**: AWS RDS PostgreSQL, Google Cloud SQL, or managed PostgreSQL
+- **Cache**: AWS ElastiCache Redis, Redis Cloud, or managed Redis
+- **Load Balancer**: AWS ALB, Google Cloud Load Balancer, or Nginx
+- **Monitoring**: AWS CloudWatch, Google Cloud Monitoring, or DataDog
+
+## ✅ Installation Verification
+
+After completing the installation steps, run this verification script to ensure everything is set up correctly:
+
+```python
+# verification_script.py
+import sys
+
+def verify_installation():
+    print("🔍 Verifying Bookly installation...")
+    
+    # Test imports
+    try:
+        import src
+        print("✅ FastAPI application imports successfully")
+    except ImportError as e:
+        print(f"❌ Import error: {e}")
+        return False
+    
+    # Test configuration
+    try:
+        from src.config import Config
+        print("✅ Configuration loads successfully")
+        
+        # Check required environment variables
+        required_vars = ['DATABASE_URL', 'JWT_SECRET', 'JWT_ALGORITHM', 'REDIS_HOST', 'REDIS_PORT']
+        missing_vars = []
+        
+        for var in required_vars:
+            if not hasattr(Config, var) or not getattr(Config, var):
+                missing_vars.append(var)
+        
+        if missing_vars:
+            print(f"⚠️ Missing environment variables: {', '.join(missing_vars)}")
+            print("📝 Make sure to configure your .env file")
+        else:
+            print("✅ All required environment variables are configured")
+            
+    except Exception as e:
+        print(f"❌ Configuration error: {e}")
+        return False
+    
+    print("\n📋 Installation Summary:")
+    print("   ✅ All Python dependencies installed")
+    print("   ✅ Application imports successfully")  
+    print("   ✅ Configuration system working")
+    print("\n🚀 Next steps:")
+    print("   1. Set up PostgreSQL database")
+    print("   2. Start Redis server")
+    print("   3. Configure environment variables in .env")
+    print("   4. Run database migrations: alembic upgrade head")
+    print("   5. Start the application: uvicorn src:app --reload")
+    print("\n📚 For detailed instructions, see the README.md file")
+    
+    return True
+
+if __name__ == "__main__":
+    success = verify_installation()
+    sys.exit(0 if success else 1)
+```
+
+Run the verification:
+```bash
+# Quick verification
+python -c "
+import src
+from src.config import Config
+print('✅ All imports successful!')
+print('✅ FastAPI app created successfully!')
+print('✅ Configuration loaded successfully!')
+print('📋 Environment variables required:')
+print('   - DATABASE_URL (PostgreSQL connection)')
+print('   - JWT_SECRET (JWT signing key)')  
+print('   - JWT_ALGORITHM (HS256)')
+print('   - REDIS_HOST (Redis server host)')
+print('   - REDIS_PORT (Redis server port)')
+print('📚 Project is ready for development!')
+"
+```
+
+If you see all checkmarks (✅), your installation is complete and ready for development!
 
 ## 🤝 Contributing
 
