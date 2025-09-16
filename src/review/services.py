@@ -1,3 +1,4 @@
+from sqlmodel import desc ,select
 from src.db.models import Review
 from src.auth.service import UserService
 from src.books.service import BookService
@@ -5,6 +6,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from .schemas import ReviewCreateModel
 from fastapi.exceptions import HTTPException
 from fastapi import status
+
+from src.auth.service import UserService
+from src.books.service import BookService
+from src.db.models import Review
 
 
 book_service = BookService()
@@ -36,3 +41,35 @@ class ReviewService:
         
         except Exception as e:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Something went wrong")
+        
+        
+    async def get_review(self, review_uid: str, session: AsyncSession):
+            statement = select(Review).where(Review.uid == review_uid)
+
+            result = await session.exec(statement)
+
+            return result.first()
+
+    async def get_all_reviews(self, session: AsyncSession):
+        statement = select(Review).order_by(desc(Review.created_at))
+
+        result = await session.exec(statement)
+
+        return result.all()
+
+    async def delete_review_to_from_book(
+        self, review_uid: str, user_email: str, session: AsyncSession
+    ):
+        user = await user_service.get_user_by_username(user_email, session)
+
+        review = await self.get_review(review_uid, session)
+
+        if not review or (review.user != user):
+            raise HTTPException(
+                detail="Cannot delete this review",
+                status_code=status.HTTP_403_FORBIDDEN,
+            )
+
+        session.delete(review)
+
+        await session.commit()

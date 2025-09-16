@@ -1,7 +1,8 @@
 from pydantic import BaseModel
 import uuid
 from datetime import datetime,date
-from typing import Optional
+from typing import Optional, List
+from src.review.schemas import ReviewModel
 
 #Getting book data
 class Book(BaseModel): # This is the schema for the Book model which will be used for serialization and validation
@@ -14,6 +15,10 @@ class Book(BaseModel): # This is the schema for the Book model which will be use
     language: str
     created_at: datetime
     updated_at: datetime
+    reviews: List[ReviewModel]
+
+class BookDetailModel(Book):
+    reviews: List[ReviewModel]
 
 #Creating book data
 class BookCreateModel(BaseModel): # This is the schema for creating a new book, it does not include uid, created_at, and updated_at
